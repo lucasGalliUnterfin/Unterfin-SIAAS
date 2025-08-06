@@ -12,13 +12,14 @@ def configure_env():
 
 # Crear el engine de PostgreSQL
 def get_db_engine():
-    user = os.getenv("POSTGRES_USER")
-    password = os.getenv("POSTGRES_PASSWORD")
-    host = os.getenv("POSTGRES_HOST")
-    port = os.getenv("POSTGRES_PORT")
-    db = os.getenv("POSTGRES_DB")
+    user = os.getenv("SUPABASE_USER")
+    password = os.getenv("SUPABASE_PASSWORD")
+    host = os.getenv("SUPABASE_HOST")
+    port = os.getenv("SUPABASE_PORT")
+    db = os.getenv("SUPABASE_DB")
 
-    conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
+    conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}?sslmode=require"
+
     return create_engine(conn_str)
 
 # Funciones de ingestión
@@ -68,7 +69,7 @@ def get_move_index(period="1y", interval="1d"):
 # Guardar DataFrame en PostgreSQL
 def save_to_postgres(df: pd.DataFrame, table_name: str):
     engine = get_db_engine()
-    df.to_sql(table_name, engine, if_exists="append", index=True, index_label="date")
+    df.to_sql(table_name, engine, if_exists="replace", index=True, index_label="date")
     print(f"Datos guardados en la tabla '{table_name}'")
 
 # Punto de entrada
