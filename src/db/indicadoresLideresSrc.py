@@ -55,11 +55,11 @@ def get_inflation(fechaInicio,fechaFin):
         'CORESTICKM159SFRBATL',
         observation_start= fechaInicio,  # fecha de inicializacion
         observation_end= fechaFin,    # fecha de finalizacion
-        frequency='a'                    # Tipos de frecuencia: 'm', 'q', 'sa', 'a'
+        frequency='m'                    # Tipos de frecuencia: 'm', 'q', 'sa', 'a'
     )
 
     df = inflacionSerie.reset_index()
-    df.columns = ["Fecha","Flujo de Fondos Corpo"]
+    df.columns = ["Fecha","Inflacion"]
     return df
 
 
@@ -132,6 +132,9 @@ def get_PMI():
 
     PMI_service = pd.read_html(str(tables))[0]
     PMI_service = PMI_service.iloc[:-3]
+    PMI_service = PMI_service.iloc[:,:-4]
+    PMI_service = PMI_service.drop(columns=["Unnamed: 0_level_0"])
+    PMI_service = PMI_service["Services PMI®"]
 
     return PMI_manufacture,PMI_service
 
