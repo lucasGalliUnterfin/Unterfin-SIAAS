@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from fredapi import Fred
 import requests
 from bs4 import BeautifulSoup
-
+ 
 def configure_env():
     load_dotenv(os.path.join(os.path.__file___,'..','..','claves.env'))
 
