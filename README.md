@@ -10,7 +10,8 @@ sistema_alertas_ai/
 │── notebooks/        # Jupyter notebooks para pruebas rápidas
 │── src/              # Código fuente principal
 │   ├── ingestion/    # scripts para bajar datos
-│   ├── db/           # conexión y queries a PostgreSQL
+│   ├── db/           # conexión PostgreSQL
+│   ├── queries/      # queries a PostgreSQL
 │   └── alerts/       # motor de reglas y notificaciones
 │── tests/            # pruebas 
 │── .env              # claves y credenciales
