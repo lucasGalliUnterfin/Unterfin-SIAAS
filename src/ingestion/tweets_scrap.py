@@ -1,0 +1,1 @@
+# No parece nada trivial scrapear Twitter. Si me preguntan, mi opinión es que es absolutamente infactible.
