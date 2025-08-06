@@ -12,7 +12,8 @@ sistema_alertas_ai/
 │   ├── ingestion/    # scripts para bajar datos
 │   ├── db/           # conexión PostgreSQL
 │   ├── queries/      # queries a PostgreSQL
-│   └── alerts/       # motor de reglas y notificaciones
+│   ├── alerts/       # motor de reglas
+│   └── communication/# motor de notificaciones
 │── tests/            # pruebas 
 │── .env              # claves y credenciales
 │── requirements.txt  # librerías del proyecto
