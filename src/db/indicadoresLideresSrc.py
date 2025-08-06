@@ -16,17 +16,22 @@ def configure_env():
 
 # Crear el engine de PostgreSQL
 def get_db_engine():
-    user = os.getenv("POSTGRES_USER")
-    password = os.getenv("POSTGRES_PASSWORD")
-    host = os.getenv("POSTGRES_HOST")
-    port = os.getenv("POSTGRES_PORT")
-    db = os.getenv("POSTGRES_DB")
+    user = os.getenv("SUPABASE_USER")
+    password = os.getenv("SUPABASE_PASSWORD")
+    host = os.getenv("SUPABASE_HOST")
+    port = os.getenv("SUPABASE_PORT")
+    db = os.getenv("SUPABASE_DB")
 
-    conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
+    conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}?sslmode=require"
+
     return create_engine(conn_str)
 
 
-
+# Guardar DataFrame en PostgreSQL
+def save_to_postgres(df: pd.DataFrame, table_name: str):
+    engine = get_db_engine()
+    df.to_sql(table_name, engine, if_exists="replace", index=True, index_label="date")
+    print(f"Datos guardados en la tabla '{table_name}'")
 
 """
 Inflación, usamos Fred para obtener una serie de tiempo de datos inflacionarios
@@ -53,9 +58,9 @@ def get_inflation(fechaInicio,fechaFin):
         frequency='a'                    # Tipos de frecuencia: 'm', 'q', 'sa', 'a'
     )
 
-    inflacionDF =  inflacionSerie.to_frame()
-    
-    return inflacionDF
+    df = inflacionSerie.reset_index()
+    df.columns = ["Fecha","Flujo de Fondos Corpo"]
+    return df
 
 
 """
@@ -79,10 +84,12 @@ def get_NFP(fechaInicio,fechaFin):
         observation_end= fechaFin,    # fecha de finalizacion
         frequency='w'                    # Tipos de frecuencia: 'm', 'q', 'sa', 'a'
     )
+        
 
-    NFP  = NFPSerie.to_frame()
-    
-    return NFP
+    df = NFPSerie.reset_index()
+    df.columns = ["Fecha","Non-farm Payroll"]
+
+    return df
 
 
 

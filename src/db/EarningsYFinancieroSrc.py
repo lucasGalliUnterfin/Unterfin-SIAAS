@@ -11,6 +11,25 @@ from bs4 import BeautifulSoup
 def configure_env():
     load_dotenv(os.path.join(os.path.__file___,'..','..','claves.env'))
 
+# Crear el engine de PostgreSQL
+def get_db_engine():
+    user = os.getenv("SUPABASE_USER")
+    password = os.getenv("SUPABASE_PASSWORD")
+    host = os.getenv("SUPABASE_HOST")
+    port = os.getenv("SUPABASE_PORT")
+    db = os.getenv("SUPABASE_DB")
+
+    conn_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}?sslmode=require"
+
+    return create_engine(conn_str)
+
+# Guardar DataFrame en PostgreSQL
+def save_to_postgres(df: pd.DataFrame, table_name: str):
+    engine = get_db_engine()
+    df.to_sql(table_name, engine, if_exists="replace", index=True, index_label="date")
+    print(f"Datos guardados en la tabla '{table_name}'")
+
+
 """
 Stess tests: Usams la informacion disponible en fred, St. Louis Fed Financial Stress Index (STLFSI4)
 URL de informacion: https://fred.stlouisfed.org/series/STLFSI4
@@ -29,7 +48,8 @@ def get_stress(fechaInicio,fechaFin):
     observation_end= fechaFin,    # fecha de finalizacion
     frequency='w'                    # Tipos de frecuencia: 'm', 'q', 'sa', 'a'
     )
-    df = stress.to_frame("Stress")
+    df = stress.reset_index()
+    df.columns = ["Fecha","stress"]
     return df
 """
 Funcion que devuelve un dataframe con los n tickers mas alta con informacion de EPS y marketcap y un float que es
@@ -146,7 +166,8 @@ def get_TotalExp(fechaInicio,fechaFin):
     frequency='q'                    # Tipos de frecuencia: 'm', 'q', 'sa', 'a'
     )
 
-    df = cp.to_frame("Inversiones de capital totales")
+    df = cp.reset_index()
+    df.columns = ["Fecha","Ganancia Corporativa"]
     return df
 
 
@@ -154,8 +175,19 @@ def get_TotalExp(fechaInicio,fechaFin):
 """
 5.) Corporate Net Cash Flow with IVA (CNCF):https://fred.stlouisfed.org/series/CNCF
 """
+def get_CashFlow(fechaInicio,fechaFin):
+    api_key = os.getenv("FRED_API_KEY")
+    fred = Fred(api_key)
+    cp = fred.get_series(
+    'BOGZ1FA895050005Q',
+    observation_start= fechaInicio,  # fecha de inicializacion
+    observation_end= fechaFin,    # fecha de finalizacion
+    frequency='q'                    # Tipos de frecuencia: 'm', 'q', 'sa', 'a'
+    )
 
-
+    df = cp.reset_index()
+    df.columns = ["Fecha","Flujo de Fondos Corpo"]
+    return df
 
 
 
