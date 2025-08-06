@@ -33,5 +33,3 @@ def get_treasury_spread():
     df = pd.DataFrame(data)
     df["Spread_2s10s"] = df["10Y"] - df["2Y"]
     return df
-
-get_treasury_spread()
