@@ -5,9 +5,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 import pandas as pd
 from datetime import datetime, timezone
 
+# Para enviar notificaciones
 from src.communication.mail import send_mail
 from src.communication.slack import send_alert
 
+# Para obtener noticias de diferentes fuentes
 from src.sources.finnhub import get_news as get_finnhub_news
 from src.sources.google_news import get_news as get_google_news
 from src.sources.investing import get_news as get_investing_news
@@ -16,11 +18,29 @@ from src.sources.trading_economics import get_news as get_trading_economics_news
 # ! from src.sources.twitter_deltaone import get_news as get_twitter_deltaone_news
 from src.sources.yahoo_finance import get_news as get_yahoo_finance_news
 
+# Para insertar alertas en la base de datos
+from src.queries.insert_alerts import insert_alerts
 
+
+# Keywords para clasificar la severidad de las alertas
 SEVERITY_KEYWORDS = {
     "rojo": ["bankruptcy", "default", "fraud", "collapse", "litigation", "sanction"],
     "amarillo": ["restructuring", "merger", "acquisition", "lawsuit", "fined", "downgrade"],
     "verde": ["deal", "agreement", "partnership", "negotiation", "settlement", "announcement"]
+}
+
+# Mapeo de severidades a números
+SEVERITY_MAPPING = {
+    "rojo": 1,
+    "amarillo": 2,
+    "verde": 3
+}
+
+# Mapa de severidades para texto
+SEVERITY_MAP = {
+    1: "🔴 ROJO",
+    2: "🟡 AMARILLO",
+    3: "🟢 VERDE"
 }
 
 ####################################
@@ -40,11 +60,11 @@ def get_news():
 ####################################
 # Clasificacion de noticias
 ####################################
-def classify_news(item):
+def classify_news(item) -> tuple[bool, int | None]:
     text = f"{item.get('title', '')} {item.get('description', '')}".lower()
     for level, keywords in SEVERITY_KEYWORDS.items():
         if any(keyword in text for keyword in keywords):
-            return True, level
+            return True, SEVERITY_MAPPING[level]
     return False, None
 
 ####################################
@@ -73,19 +93,29 @@ def send_notifications(alerts_df: pd.DataFrame):
     if alerts_df.empty:
         return
 
+    alerts_df["severity"] = alerts_df["severity"].astype(int)
+
     body_lines = []
     for _, row in alerts_df.iterrows():
-        line = f"[{row['severity'].upper()}] {row['title']}\n{row['description']}\n{row['url']}\n"
-        body_lines.append(line)
+        sev_label = SEVERITY_MAP.get(row["severity"], "SIN CLASIFICAR")
+        emoji = sev_label.split()[0]  
+        text = (
+            f"{emoji} [{sev_label.split()[1]}]\n"
+            f"📌 {row['title']}\n"
+            f"📝 {row['description']}\n"
+            f"🔗 {row['url']}"
+        )
+        body_lines.append(text)
 
-    full_body = "\n\n".join(body_lines)
+    full_body = "\n\n" + "\n\n".join(body_lines)
 
     # Enviar por mail
-    send_mail("🚨 Alertas TradingEconomics", full_body)
+    send_mail("🚨 NUEVAS ALERTAS", full_body)
 
-    # Enviar por Slack
-    for line in body_lines:
-        send_alert(line.strip())
+    # Enviar por Slack (una por una)
+    for msg in body_lines:
+        send_alert(msg)
+
 
 ####################################
 # Proceso principal de alertas
@@ -107,8 +137,14 @@ def process_news():
 
     df = pd.DataFrame(alert_rows)
 
+    # Elimino los duplicados por URL
+    df = df.drop_duplicates(subset="url")
+
     df.to_csv("data/alertas.csv", index=False)
     print(f"✅ {len(df)} alertas guardadas en data/alertas.csv")
+
+    # Guardar las alertas en la base de datos
+    if not df.empty: insert_alerts(df)
 
     # Enviar las notificaciones
     send_notifications(df)
