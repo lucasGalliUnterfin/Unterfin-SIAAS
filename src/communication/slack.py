@@ -20,10 +20,10 @@ def send_alert(message: str, channel: str = "#testing-botalertas"):
             channel=channel,
             text=message
         )
-        print("✅ Mensaje enviado:", response["ts"])
+        #print("✅ Mensaje enviado:", response["ts"])
     except SlackApiError as e:
         print("❌ Error al enviar mensaje:", e.response["error"])
 
 
-if __name__ == "__main__":
-    send_alert("Racing goleó 3-0 a Riestra :smile:")
+#if __name__ == "__main__":
+#    send_alert("Racing goleó 3-0 a Riestra :smile:")
