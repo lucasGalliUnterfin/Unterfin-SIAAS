@@ -151,7 +151,7 @@ def get_TotalExp(fechaInicio,fechaFin):
 """
 5.) Corporate Net Cash Flow with IVA (CNCF):https://fred.stlouisfed.org/series/CNCF
 """
-def get_CashFlow(fechaInicio,fechaFin):
+def get_cashFlow(fechaInicio,fechaFin):
     api_key = os.getenv("FRED_API_KEY")
     fred = Fred(api_key)
     cp = fred.get_series(

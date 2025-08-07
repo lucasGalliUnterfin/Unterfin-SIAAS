@@ -12,7 +12,7 @@ un EPS con promedios pesados segun marketcap total de los n tickers seleccionaod
 ( n<500 :) )
 """
 
-def get_epsInd(n):
+def get_epsInd(n = 100):
 
     avg_eps = 0
     eps_promedio = 0
