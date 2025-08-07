@@ -2,17 +2,20 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-import requests
 import pandas as pd
 from datetime import datetime, timezone
-from dotenv import load_dotenv
 
 from src.communication.mail import send_mail
 from src.communication.slack import send_alert
 
-load_dotenv("claves.env")
+from src.sources.finnhub import get_news as get_finnhub_news
+from src.sources.google_news import get_news as get_google_news
+from src.sources.investing import get_news as get_investing_news
+from src.sources.reuters import get_news as get_reuters_news
+from src.sources.trading_economics import get_news as get_trading_economics_news
+# ! from src.sources.twitter_deltaone import get_news as get_twitter_deltaone_news
+from src.sources.yahoo_finance import get_news as get_yahoo_finance_news
 
-API_KEY = os.getenv("TE_KEY")
 
 SEVERITY_KEYWORDS = {
     "rojo": ["bankruptcy", "default", "fraud", "collapse", "litigation", "sanction"],
@@ -21,16 +24,18 @@ SEVERITY_KEYWORDS = {
 }
 
 ####################################
-# Obtencion de datos de TradingEconomics
+# Obtencion de noticias 
 ####################################
-def fetch_te_news():
-    url = f"https://api.tradingeconomics.com/news?c={API_KEY}&f=json"
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        raise Exception(f"Error {response.status_code}: {response.text}")
-
-    return response.json()
+def get_news():
+    return (
+        get_finnhub_news() + 
+        get_google_news() +
+        get_investing_news() +
+        get_reuters_news() +
+        get_trading_economics_news() +
+        # ! get_twitter_deltaone_news() +
+        get_yahoo_finance_news()
+    )
 
 ####################################
 # Clasificacion de noticias
@@ -45,8 +50,8 @@ def classify_news(item):
 ####################################
 # Guardado de noticias
 ####################################
-def save_all_te_news():
-    news_items = fetch_te_news()
+def save_all_news():
+    news_items = get_news()
     rows = []
 
     for item in news_items:
@@ -85,8 +90,8 @@ def send_notifications(alerts_df: pd.DataFrame):
 ####################################
 # Proceso principal de alertas
 ####################################
-def process_te_news():
-    raw_news = fetch_te_news()
+def process_news():
+    raw_news = get_news()
 
     alert_rows = []
     for item in raw_news:
@@ -108,5 +113,5 @@ def process_te_news():
     # Enviar las notificaciones
     send_notifications(df)
 
-save_all_te_news()
-process_te_news()
+save_all_news()
+process_news()
