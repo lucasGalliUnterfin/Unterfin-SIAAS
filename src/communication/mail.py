@@ -24,4 +24,4 @@ def send_mail(subject, body, to_email=None):
         server.login(smtp_user, smtp_pass)
         server.sendmail(smtp_user, to_email, msg.as_string())
 
-send_mail("Testeo mail desde Python", "eso que dice el titulo")
+# send_mail("Testeo mail desde Python", "eso que dice el titulo")
