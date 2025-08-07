@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 # Para enviar notificaciones
 from src.communication.mail import send_mail
-from src.communication.slack import send_alert
+from src.communication.slack import send_alert, send_alert_block
 
 # Para obtener noticias de diferentes fuentes
 from src.sources.finnhub import get_news as get_finnhub_news
@@ -38,9 +38,9 @@ SEVERITY_MAPPING = {
 
 # Mapa de severidades para texto
 SEVERITY_MAP = {
-    1: "🔴 ROJO",
-    2: "🟡 AMARILLO",
-    3: "🟢 VERDE"
+    1: "Severidad roja",
+    2: "Severidad amarilla",
+    3: "Severidad verde"
 }
 
 ####################################
@@ -87,34 +87,56 @@ def save_all_news():
     print(f"💾 {len(df)} noticias guardadas en data/news.csv")
 
 ####################################
+# Formateo de alertas
+####################################
+def format_alerts_as_html(alerts_df):
+    rows = []
+    for _, row in alerts_df.iterrows():
+        severity = int(row['severity'])
+        severity_text = SEVERITY_MAP.get(severity, "Severidad sin clasificar")
+        title = row["title"]
+        desc = row["description"]
+        url = row["url"]
+        color = {1: "#e74c3c", 2: "#f39c12", 3: "#27ae60"}.get(severity, "#7f8c8d")
+
+        html_row = f"""
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;">
+                <strong>{title}</strong><br>
+                <span style="color: {color}; font-weight: bold;">{severity_text}</span><br>
+                {desc}<br>
+                <a href="{url}">Leer más</a>
+            </td>
+        </tr>
+        """
+        rows.append(html_row)
+
+    table = f"""
+    <html>
+    <body>
+        <h2>🚨 Alertas Detectadas</h2>
+        <table style="width:100%; border-collapse: collapse;">
+            {''.join(rows)}
+        </table>
+    </body>
+    </html>
+    """
+    return table
+
+
+####################################
 # Envio de notificaciones
 ####################################
-def send_notifications(alerts_df: pd.DataFrame):
+def send_notifications(alerts_df):
     if alerts_df.empty:
         return
 
-    alerts_df["severity"] = alerts_df["severity"].astype(int)
+    html_body = format_alerts_as_html(alerts_df)
+    send_mail("🚨 Nuevas alertas", html_body)
 
-    body_lines = []
     for _, row in alerts_df.iterrows():
-        sev_label = SEVERITY_MAP.get(row["severity"], "SIN CLASIFICAR")
-        emoji = sev_label.split()[0]  
-        text = (
-            f"{emoji} [{sev_label.split()[1]}]\n"
-            f"📌 {row['title']}\n"
-            f"📝 {row['description']}\n"
-            f"🔗 {row['url']}"
-        )
-        body_lines.append(text)
-
-    full_body = "\n\n" + "\n\n".join(body_lines)
-
-    # Enviar por mail
-    send_mail("🚨 NUEVAS ALERTAS", full_body)
-
-    # Enviar por Slack (una por una)
-    for msg in body_lines:
-        send_alert(msg)
+        sev = str(row["severity"])
+        send_alert_block(row["title"], row["description"], row["url"], severity=sev)
 
 
 ####################################
