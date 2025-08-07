@@ -21,6 +21,9 @@ from src.sources.yahoo_finance import get_news as get_yahoo_finance_news
 # Para insertar alertas en la base de datos
 from src.queries.insert_alerts import insert_alerts
 
+# Para clasificar noticias
+from src.classifiers.zero_shot import zero_shot_classify
+
 
 # Keywords para clasificar la severidad de las alertas
 SEVERITY_KEYWORDS = {
@@ -29,11 +32,10 @@ SEVERITY_KEYWORDS = {
     "verde": ["deal", "agreement", "partnership", "negotiation", "settlement", "announcement"]
 }
 
-# Mapeo de severidades a números
-SEVERITY_MAPPING = {
-    "rojo": 1,
-    "amarillo": 2,
-    "verde": 3
+LABEL_MAPPING = {
+    "Severidad roja": 1,
+    "Severidad amarilla": 2,
+    "Severidad verde": 3
 }
 
 # Mapa de severidades para texto
@@ -60,12 +62,16 @@ def get_news():
 ####################################
 # Clasificacion de noticias
 ####################################
+"""
+Funcion antigua que se basaba en palabras clave
 def classify_news(item) -> tuple[bool, int | None]:
     text = f"{item.get('title', '')} {item.get('description', '')}".lower()
     for level, keywords in SEVERITY_KEYWORDS.items():
         if any(keyword in text for keyword in keywords):
             return True, SEVERITY_MAPPING[level]
     return False, None
+"""
+
 
 ####################################
 # Guardado de noticias
@@ -147,8 +153,8 @@ def process_news():
 
     alert_rows = []
     for item in raw_news:
-        is_alert, severity = classify_news(item)
-        if is_alert:
+        severity = zero_shot_classify(item)
+        if severity is not None:
             alert_rows.append({
                 "date": item.get("date", datetime.now(timezone.utc).isoformat()),
                 "title": item.get("title"),
