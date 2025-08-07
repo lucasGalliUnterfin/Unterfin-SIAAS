@@ -62,15 +62,15 @@ def get_news():
 ####################################
 # Clasificacion de noticias
 ####################################
-"""
-Funcion antigua que se basaba en palabras clave
+
 def classify_news(item) -> tuple[bool, int | None]:
     text = f"{item.get('title', '')} {item.get('description', '')}".lower()
     for level, keywords in SEVERITY_KEYWORDS.items():
         if any(keyword in text for keyword in keywords):
             return True, SEVERITY_MAPPING[level]
     return False, None
-"""
+
+## Aca quisiera cambiar esta funcion por alguna de los archivos de src/classifiers
 
 
 ####################################

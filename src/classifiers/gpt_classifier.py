@@ -1,62 +1,51 @@
-import os
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
+import os
 
 load_dotenv("claves.env")
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
-SYSTEM_PROMPT = """
-Eres un clasificador de noticias FINANCIERAS. *Todas* las noticias que recibes
-provienen de fuentes económicas (Reuters, Bloomberg, TradingEconomics, etc.).  
-Tu tarea es distinguir:
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # o directamente el string
 
-1. **Roja**: noticia financiera CRÍTICA que requiere acción inmediata.  
-2. **Amarilla**: noticia financiera RELEVANTE que requiere monitoreo intensivo.  
-3. **Verde**: noticia financiera POSITIVA, representa oportunidad de compra.  
-4. **Ninguna**: noticia financiera IRRELEVANTE para decisiones de inversión.
+def classify_with_gpt(text: str) -> dict:
+    context = """You are a financial alert classifier. You must classify the following news headline into one of four categories:
+    - Red: urgent and critical, immediate action needed.
+    - Yellow: important, close monitoring needed.
+    - Green: positive, market opportunity.
+    - None: not relevant to financial markets, fundamentally not for decision making."""
 
-Solo devuelves exactamente una de las etiquetas:  
-`Roja`, `Amarilla`, `Verde` o `Ninguna`.
-"""
+    # Ejemplos de clasificación hechos con ChatGPT
+    few_shot_examples = """
+    Example 1:
+    Headline: "European sovereign debt downgraded to junk by major rating agency amid default fears"
+    Classification: Red
 
-FEW_SHOT_EXAMPLES = [
-    {
-        "news": "Volatility index spikes 20% amid uncertain market conditions",
-        "label": "Ninguna"
-    },
-    {
-        "news": "Major European bank faces liquidity crisis, government steps in",
-        "label": "Roja"
-    },
-    {
-        "news": "U.S. consumer price index rises slightly above expectations",
-        "label": "Amarilla"
-    },
-    {
-        "news": "Tech giant reports quarterly revenue 25% above forecasts",
-        "label": "Verde"
-    }
-]
+    Example 2:
+    Headline: "Federal Reserve minutes hint at possible rate hike before year-end"
+    Classification: Yellow
 
-def classify_with_gpt(text: str) -> str:
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for ex in FEW_SHOT_EXAMPLES:
-        messages.append({
-            "role": "user",
-            "content": f"Noticia: {ex['news']}\nEtiqueta: {ex['label']}"
-        })
-    messages.append({
-        "role": "user",
-        "content": f"Noticia: {text}\nEtiqueta:"
-    })
+    Example 3:
+    Headline: "NASDAQ closes at record high as tech giants beat earnings estimates"
+    Classification: Green
 
-    resp = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-        temperature=0.0,
-        max_tokens=4
+    Example 4:
+    Headline: "The Central Bank of Peru maintains interest rates unchanged at 6.75% for the third month in a row"
+    Classification: None
+    """
+
+    system_prompt = context
+    user_prompt = few_shot_examples + f"\nHeadline: \"{text}\"\nClassification:"
+
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        temperature=0,
     )
-    label = resp.choices[0].message.content.strip()
-    return label if label in {"Roja","Amarilla","Verde","Ninguna"} else "Ninguna"
+
+    answer = completion.choices[0].message.content.strip()
+
+    return answer
 
 print(classify_with_gpt("US Treasury yields surge 50 bps in one day, triggering margin calls across hedge funds"))
