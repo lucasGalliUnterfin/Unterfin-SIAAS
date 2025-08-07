@@ -31,27 +31,6 @@ def save_to_postgres(df: pd.DataFrame, table_name: str):
 
 
 """
-Stess tests: Usams la informacion disponible en fred, St. Louis Fed Financial Stress Index (STLFSI4)
-URL de informacion: https://fred.stlouisfed.org/series/STLFSI4
-
-OBS: el formator de la fecha debe ser "AAAA-MM-DD"
-"""
-def get_stress(fechaInicio,fechaFin):
-
-    api_key = os.getenv('FRED_API_KEY')
-    
-    fred = Fred(api_key)
- 
-    stress = fred.get_series(
-    'STLFSI4',
-    observation_start= fechaInicio,  # fecha de inicializacion
-    observation_end= fechaFin,    # fecha de finalizacion
-    frequency='w'                    # Tipos de frecuencia: 'm', 'q', 'sa', 'a'
-    )
-    df = stress.reset_index()
-    df.columns = ["Fecha","stress"]
-    return df
-"""
 Funcion que devuelve un dataframe con los n tickers mas alta con informacion de EPS y marketcap y un float que es
 un EPS con promedios pesados segun marketcap total de los n tickers seleccionaods
 ( n<500 :) )
@@ -110,8 +89,6 @@ def get_epsInd(n):
 
 
 """
-Posibles Variables a tener en cuenta(disponibles en FRED)
-
 Business Expectations: Sales Revenue Growth (ATLSBUSRGEP) :https://fred.stlouisfed.org/series/ATLSBUSRGEP
 OBS: el formator de la fecha debe ser "AAAA-MM-DD"
 """
@@ -155,7 +132,6 @@ def get_CP(fechaInicio,fechaFin):
 All Sectors; Total Capital Expenditures, Transactions (BOGZ1FA895050005Q): https://fred.stlouisfed.org/series/BOGZ1FA895050005Q
 "Inversiones de capital totales"
 """
-#FALTA NOMBRAR LAS COLUMNS DEL DF
 def get_TotalExp(fechaInicio,fechaFin):
     api_key = os.getenv("FRED_API_KEY")
     fred = Fred(api_key)
