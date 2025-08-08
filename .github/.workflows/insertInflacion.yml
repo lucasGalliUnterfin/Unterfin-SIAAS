@@ -18,11 +18,12 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Check Python version
+        run: python --version
+        
       - name: Install dependencies
         run: pip install -r requirements_inflacion.txt
 
-      - name: Check Python version
-        run: python --version
 
       #Creamos un archivo "claves.env" provisorio con las claves necesarias para le ejecucion del programa
       - name: Create .env file from secrets
