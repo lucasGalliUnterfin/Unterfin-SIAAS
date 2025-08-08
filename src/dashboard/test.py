@@ -1,5 +1,7 @@
 # Se corre con streamlit run c:/Users/resea/OneDrive/Escritorio/Unterfin-SIAAS/src/dashboard/test.py
 
+# Se corre con streamlit run c:/Users/resea/OneDrive/Escritorio/Unterfin-SIAAS/src/dashboard/test.py
+
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -14,7 +16,7 @@ from sqlalchemy import text
 from src.db.connection import get_db_engine
 
 # --- Configuración de la página ---
-st.set_page_config(page_title="Dashboard de Alertas", layout="wide")
+st.set_page_config(page_title="Dashboard de Alertas Financiera - Unterfin", layout="wide")
 
 st.title("📊 Dashboard de Alertas Financiera - Unterfin")
 
@@ -52,7 +54,7 @@ with st.sidebar:
     start_date_ts = pd.Timestamp(start_date).tz_localize("UTC")
     end_date_ts = pd.Timestamp(end_date).tz_localize("UTC")
 
-# Aplicar filtros
+# Aplicar filtros básicos (severidad + sidebar fechas)
 df = df[df["severity_name"].isin(severity_filter)]
 df = df[(df["date"] >= start_date_ts) & (df["date"] <= end_date_ts)]
 
@@ -111,7 +113,7 @@ with col_fecha2:
 with col_orden:
     orden = st.selectbox("Ordenar por fecha", ["Más reciente", "Más antigua"])
 
-# --- Aplicar filtros ---
+# --- Aplicar filtros adicionales sobre df_filtrado (que parte del df ya filtrado) ---
 utc = pytz.UTC
 df_filtrado = df.copy()
 
@@ -125,7 +127,7 @@ if filtro_texto:
         df_filtrado["description"].str.contains(filtro_texto, case=False, na=False)
     ]
 
-# Pasamos las fechas de inicio de fin a timestamptz
+# Aplicamos las fechas al df_filtrado
 df_filtrado = df_filtrado[
     (df_filtrado["date"] >= fecha_inicio_ts) &
     (df_filtrado["date"] <= fecha_fin_ts)
@@ -163,9 +165,9 @@ SEVERITY_COLORS = {
 }
 
 SEVERITY_MAP = {
-    "verde":1,
-    "amarillo":2,
-    "rojo":3,
+    "verde": 1,
+    "amarillo": 2,
+    "rojo": 3,
     "no es alerta": 4
 }
 
@@ -182,10 +184,11 @@ severities_tab_map = {
 for i, tab in enumerate(tabs):
     with tab:
         filtro = severities_tab_map[i]
+        
         if filtro:
-            df_filtered = df[df["severity_name"] == filtro]
+            df_filtered = df_filtrado[df_filtrado["severity_name"] == filtro]
         else:
-            df_filtered = df.copy()
+            df_filtered = df_filtrado.copy()
 
         for _, row in df_filtered.iterrows():
             color = SEVERITY_COLORS.get(row["severity_name"], "#7f8c8d")
@@ -216,9 +219,9 @@ for i, tab in enumerate(tabs):
                     st.write("Sugerir cambio de color de alerta:")
                     for name in SEVERITY_MAP.keys():
                         btn_label = name.capitalize()
-                        # 🔹 Key único combinando ID + pestaña
+                        # Label del boton
                         if st.button(
-                            f"⬤ {btn_label}", 
+                            f"⬤ {btn_label}",
                             key=f"{name}_{row['id']}_tab{i}"
                         ):
                             if update_severity_boss(row['id'], name):
