@@ -23,16 +23,15 @@ jobs:
 
       #Creamos un archivo "claves.env" provisorio con las claves necesarias para le ejecucion del programa
       - name: Create .env file from secrets
-        #Fijamos la fecha desdes la cual tomamos los datos
-        run: echo "fechaInicio=2023-01-01" >> claves.env
-        #Importamos la clave de FRED
-        run: echo "api_key=${{ secrets.FRED_API_KEY }}" >> claves.env
-        #Datos Postgre
-        run: echo "user=${{ secrets.SUPABASE_USER }}" >> claves.env 
-        run: echo "password=${{ secrets.SUPABASE_PASSWORD }}" >> claves.env 
-        run: echo "host=${{ secrets.SUPABASE_HOST }}" >> claves.env
-        run: echo "port=${{ secrets.SUPABASE_PORT }}" >> claves.env 
-        run: db "port=${{ secrets.SUPABASE_DB }}" >> claves.env 
+        run: |
+          echo "fechaInicio=2023-01-01" >> claves.env
+          echo "api_key=${{ secrets.FRED_API_KEY }}" >> claves.env
+          echo "user=${{ secrets.SUPABASE_USER }}" >> claves.env
+          echo "password=${{ secrets.SUPABASE_PASSWORD }}" >> claves.env
+          echo "host=${{ secrets.SUPABASE_HOST }}" >> claves.env
+          echo "port=${{ secrets.SUPABASE_PORT }}" >> claves.env
+          echo "db=${{ secrets.SUPABASE_DB }}" >> claves.env
+
         
 
       - name: Update Inflacion
