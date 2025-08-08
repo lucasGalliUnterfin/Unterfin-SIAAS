@@ -22,7 +22,7 @@ from src.sources.yahoo_finance import get_news as get_yahoo_finance_news
 from src.queries.insert_alerts import insert_alerts
 
 # Para clasificar noticias
-from src.classifiers.zero_shot import zero_shot_classify
+#from src.classifiers.zero_shot import zero_shot_classify as classify_news
 
 
 # Keywords para clasificar la severidad de las alertas
@@ -33,16 +33,16 @@ SEVERITY_KEYWORDS = {
 }
 
 SEVERITY_MAPPING = {
-    "Severidad roja": 1,
-    "Severidad amarilla": 2,
-    "Severidad verde": 3
+    "rojo": 1,
+    "amarillo": 2,
+    "verde": 3
 }
 
 # Mapa de severidades para texto
 SEVERITY_MAP = {
-    1: "Severidad roja",
-    2: "Severidad amarilla",
-    3: "Severidad verde"
+    1: "Alerta Roja",
+    2: "Alerta Amarilla",
+    3: "Alerta Verde"
 }
 
 ####################################
@@ -153,8 +153,8 @@ def process_news():
 
     alert_rows = []
     for item in raw_news:
-        severity = zero_shot_classify(item)
-        if severity is not None:
+        is_relevant, severity = classify_news(item)
+        if is_relevant and severity is not None:
             alert_rows.append({
                 "date": item.get("date", datetime.now(timezone.utc).isoformat()),
                 "title": item.get("title"),

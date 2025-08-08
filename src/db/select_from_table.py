@@ -22,5 +22,5 @@ def query_table(table_name: str):
         df = pd.read_sql(f"SELECT * FROM {table_name};", conn)
     return df
 
-df = query_table("severities")   # 👈 cambiar por la tabla a consultar
-print(df)
+# df = query_table("severities")   # 👈 cambiar por la tabla a consultar
+# print(df)
