@@ -6,6 +6,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import date
+from sqlalchemy import text
 
 from src.db.connection import get_db_engine
 
@@ -91,21 +92,78 @@ SEVERITY_COLORS = {
     "verde": "#27ae60"
 }
 
+
+############## Sistema de mejora de las recomendaciones ###################
+
+def update_severity_boss(alert_id, new_severity_name):
+    engine = get_db_engine()
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+                UPDATE alerts
+                SET severity_boss = (
+                    SELECT id FROM severities WHERE severity = :sev
+                )
+                WHERE id = :alert_id
+            """),
+            {"sev": new_severity_name, "alert_id": alert_id}
+        )
+
+SEVERITY_OPTIONS = ["rojo", "amarillo", "verde", "no es alerta"]
+
+SEVERITY_COLORS = {
+    "rojo": "#e74c3c",
+    "amarillo": "#f39c12",
+    "verde": "#27ae60",
+    "no es alerta": "#7f8c8d"
+}
+
+SEVERITY_MAP = {
+    "verde":1,
+    "amarillo":2,
+    "rojo":3,
+    "no es alerta": 4
+}
+
 st.subheader("📋 Detalle de alertas")
+
 for _, row in df.iterrows():
     color = SEVERITY_COLORS.get(row["severity_name"], "#7f8c8d")
-    st.markdown(
-        f"""
-        <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <h3 style="margin-bottom: 5px;">
-                <a href="{row['url']}" target="_blank" style="text-decoration: none; color: black;">
-                    {row['title']}
-                </a>
-            </h3>
-            <span style="color: {color}; font-weight: bold;">{row['severity_name'].capitalize()}</span>
-            <p style="margin-top: 8px;">{row['description']}</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+
+    col1, col2 = st.columns([4, 1])
+    
+    # Tarjeta de alerta
+    with col1:
+        st.markdown(
+            f"""
+            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;">
+                <h3 style="margin-bottom: 5px;">
+                    <a href="{row['url']}" target="_blank" style="text-decoration: none; color: black;">
+                        {row['title']}
+                    </a>
+                </h3>
+                <span style="color: {color}; font-weight: bold;">
+                    {row['severity_name'].capitalize() if row['severity_name'] else "—"}
+                </span>
+                <p style="margin-top: 8px;">{row['description'] or ''}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    # Menú de acciones (tres puntitos)
+    with col2:
+        with st.popover("⋮"):
+            st.write("Sugerir cambio de color de alerta:")
+            for name in SEVERITY_MAP.keys():  # ej: {"verde": 1, "amarillo": 2, "rojo": 3, "no es alerta": 4}
+                btn_label = name.capitalize()
+                btn_color = SEVERITY_COLORS.get(name, "#7f8c8d")
+                if st.button(
+                    f"⬤ {btn_label}", 
+                    key=f"{name}_{row['id']}",
+                    help=f"Cambiar a {btn_label}"
+                ):
+                    if update_severity_boss(row['id'], name):
+                        st.toast(f"✅ Cambiado a {btn_label}")
+                        st.experimental_rerun()
