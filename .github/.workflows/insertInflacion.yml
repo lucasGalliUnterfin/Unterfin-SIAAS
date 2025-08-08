@@ -25,18 +25,18 @@ jobs:
         run: pip install -r requirements_inflacion.txt
 
 
-      #Creamos un archivo "claves.env" provisorio con las claves necesarias para le ejecucion del programa
       - name: Create .env file from secrets
         run: |
           echo "fechaInicio=2023-01-01" >> claves.env
-          echo "api_key=${{ secrets.FRED_API_KEY }}" >> $GITHUB_ENV
-          echo "user=${{ secrets.SUPABASE_USER }}" >> claves.env
-          echo "password=${{ secrets.SUPABASE_PASSWORD }}" >> claves.env
-          echo "host=${{ secrets.SUPABASE_HOST }}" >> claves.env
-          echo "port=${{ secrets.SUPABASE_PORT }}" >> claves.env
-          echo "db=${{ secrets.SUPABASE_DB }}" >> claves.env
+          echo "FRED_API_KEY=${{ secrets.FRED_API_KEY }}" >> claves.env
+          echo "SUPABASE_USER=${{ secrets.SUPABASE_USER }}" >> claves.env
+          echo "SUPABASE_PASSWORD=${{ secrets.SUPABASE_PASSWORD }}" >> claves.env
+          echo "SUPABASE_HOST=${{ secrets.SUPABASE_HOST }}" >> claves.env
+          echo "SUPABASE_PORT=${{ secrets.SUPABASE_PORT }}" >> claves.env
+          echo "SUPABASE_DB=${{ secrets.SUPABASE_DB }}" >> claves.env
 
         
 
       - name: Update Inflacion
-        run: python src/queries/insert_inflacion.py
+        run: |
+          python src/queries/insert_inflacion.py
