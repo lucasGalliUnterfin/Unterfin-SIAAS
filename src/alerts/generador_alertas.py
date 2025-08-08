@@ -32,7 +32,7 @@ SEVERITY_KEYWORDS = {
     "verde": ["deal", "agreement", "partnership", "negotiation", "settlement", "announcement"]
 }
 
-LABEL_MAPPING = {
+SEVERITY_MAPPING = {
     "Severidad roja": 1,
     "Severidad amarilla": 2,
     "Severidad verde": 3
