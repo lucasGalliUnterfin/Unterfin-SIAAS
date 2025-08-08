@@ -16,9 +16,9 @@ if not slack_token:
 client = WebClient(token=slack_token)
 
 SEVERITY_EMOJI = {
-    "1": ":red_circle: Severidad roja",
-    "2": ":large_yellow_circle: Severidad amarilla",
-    "3": ":large_green_circle: Severidad verde"
+    "1": ":red_circle: Alerta roja",
+    "2": ":large_yellow_circle: Alerta amarilla",
+    "3": ":large_green_circle: Alerta verde"
 }
 
 
