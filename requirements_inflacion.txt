@@ -1,4 +1,4 @@
-pandas
+pandas--no-deps
 python-dotenv
 fredapi
 sqlalchemy
