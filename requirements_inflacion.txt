@@ -1,4 +1,4 @@
-pandas--no-deps
-python-dotenv
-fredapi
-sqlalchemy
+pandas>=2.2.2,<3.0.0
+python-dotenv>=1.0.1,<2.0.0
+fredapi>=0.5.1,<0.6.0
+sqlalchemy>=2.0.31,<3.0.0
