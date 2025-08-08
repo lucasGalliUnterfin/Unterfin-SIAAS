@@ -1,3 +1,5 @@
+# Se corre con streamlit run c:/Users/resea/OneDrive/Escritorio/Unterfin-SIAAS/src/dashboard/test.py
+
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -5,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import pytz
 from datetime import date
 from sqlalchemy import text
 
@@ -13,7 +16,7 @@ from src.db.connection import get_db_engine
 # --- Configuración de la página ---
 st.set_page_config(page_title="Dashboard de Alertas", layout="wide")
 
-st.title("📊 Dashboard de Alertas Financieras")
+st.title("📊 Dashboard de Alertas Financiera - Unterfin")
 
 # --- Conectar y leer datos ---
 engine = get_db_engine()
@@ -92,6 +95,47 @@ SEVERITY_COLORS = {
     "verde": "#27ae60"
 }
 
+############## Buscador ###############################
+# --- Controles de filtrado ---
+col_buscar, col_fecha1, col_fecha2, col_orden = st.columns([3, 2, 2, 2])
+
+with col_buscar:
+    filtro_texto = st.text_input("🔍 Buscar", "")
+
+with col_fecha1:
+    fecha_inicio = st.date_input("Desde", value=df["date"].min().date())
+
+with col_fecha2:
+    fecha_fin = st.date_input("Hasta", value=df["date"].max().date())
+
+with col_orden:
+    orden = st.selectbox("Ordenar por fecha", ["Más reciente", "Más antigua"])
+
+# --- Aplicar filtros ---
+utc = pytz.UTC
+df_filtrado = df.copy()
+
+# Pasamos las fechas de inicio de fin a timestamptz
+fecha_inicio_ts = pd.Timestamp(fecha_inicio).tz_localize(utc)
+fecha_fin_ts = pd.Timestamp(fecha_fin).tz_localize(utc) + pd.Timedelta(days=1)
+
+if filtro_texto:
+    df_filtrado = df_filtrado[
+        df_filtrado["title"].str.contains(filtro_texto, case=False, na=False) |
+        df_filtrado["description"].str.contains(filtro_texto, case=False, na=False)
+    ]
+
+# Pasamos las fechas de inicio de fin a timestamptz
+df_filtrado = df_filtrado[
+    (df_filtrado["date"] >= fecha_inicio_ts) &
+    (df_filtrado["date"] <= fecha_fin_ts)
+]
+
+if orden == "Más reciente":
+    df_filtrado = df_filtrado.sort_values("date", ascending=False)
+else:
+    df_filtrado = df_filtrado.sort_values("date", ascending=True)
+
 
 ############## Sistema de mejora de las recomendaciones ###################
 
@@ -127,43 +171,56 @@ SEVERITY_MAP = {
 
 st.subheader("📋 Detalle de alertas")
 
-for _, row in df.iterrows():
-    color = SEVERITY_COLORS.get(row["severity_name"], "#7f8c8d")
+tabs = st.tabs(["🔴 Rojas", "🟡 Amarillas", "🟢 Verdes", "📋 Todas"])
+severities_tab_map = {
+    0: "rojo",
+    1: "amarillo",
+    2: "verde",
+    3: None
+}
 
-    col1, col2 = st.columns([4, 1])
-    
-    # Tarjeta de alerta
-    with col1:
-        st.markdown(
-            f"""
-            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;">
-                <h3 style="margin-bottom: 5px;">
-                    <a href="{row['url']}" target="_blank" style="text-decoration: none; color: black;">
-                        {row['title']}
-                    </a>
-                </h3>
-                <span style="color: {color}; font-weight: bold;">
-                    {row['severity_name'].capitalize() if row['severity_name'] else "—"}
-                </span>
-                <p style="margin-top: 8px;">{row['description'] or ''}</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+for i, tab in enumerate(tabs):
+    with tab:
+        filtro = severities_tab_map[i]
+        if filtro:
+            df_filtered = df[df["severity_name"] == filtro]
+        else:
+            df_filtered = df.copy()
 
-    # Menú de acciones (tres puntitos)
-    with col2:
-        with st.popover("⋮"):
-            st.write("Sugerir cambio de color de alerta:")
-            for name in SEVERITY_MAP.keys():  # ej: {"verde": 1, "amarillo": 2, "rojo": 3, "no es alerta": 4}
-                btn_label = name.capitalize()
-                btn_color = SEVERITY_COLORS.get(name, "#7f8c8d")
-                if st.button(
-                    f"⬤ {btn_label}", 
-                    key=f"{name}_{row['id']}",
-                    help=f"Cambiar a {btn_label}"
-                ):
-                    if update_severity_boss(row['id'], name):
-                        st.toast(f"✅ Cambiado a {btn_label}")
-                        st.experimental_rerun()
+        for _, row in df_filtered.iterrows():
+            color = SEVERITY_COLORS.get(row["severity_name"], "#7f8c8d")
+
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.markdown(
+                    f"""
+                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;">
+                        <h3 style="margin-bottom: 5px;">
+                            <a href="{row['url']}" target="_blank" style="text-decoration: none; color: black;">
+                                {row['title']}
+                            </a>
+                        </h3>
+                        <span style="background-color:{color}; color: white; padding: 3px 8px; border-radius: 5px; font-size: 0.8rem;">
+                            {row['severity_name'].capitalize() if row['severity_name'] else "—"}
+                        </span>
+                        <p style="margin-top: 8px; color:#555;">
+                            { (row['description'][:180] + '...') if row['description'] and len(row['description'])>180 else (row['description'] or '') }
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            with col2:
+                with st.popover("⋮"):
+                    st.write("Sugerir cambio de color de alerta:")
+                    for name in SEVERITY_MAP.keys():
+                        btn_label = name.capitalize()
+                        # 🔹 Key único combinando ID + pestaña
+                        if st.button(
+                            f"⬤ {btn_label}", 
+                            key=f"{name}_{row['id']}_tab{i}"
+                        ):
+                            if update_severity_boss(row['id'], name):
+                                st.toast(f"✅ Cambiado a {btn_label}")
+                                st.experimental_rerun()
