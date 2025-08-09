@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from fredapi import Fred
 
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", "..", "claves.env")
 load_dotenv("claves.env")
 
 """
